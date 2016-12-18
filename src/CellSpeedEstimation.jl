@@ -1,14 +1,12 @@
 module CellSpeedEstimation
 
 # package code goes here
-using
-DataFrames,
+using DataFrames,
 GLM,
 Images,
 StatsBase
 
-export
-column_correlations,
+export column_correlations,
 invert_grayscale_image,
 ROI_to_array,
 slope_estimation
