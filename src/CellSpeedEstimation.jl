@@ -8,6 +8,7 @@ StatPlots,
 StatsBase
 
 export column_correlations,
+estimate_velocities,
 invert_grayscale_image,
 ROI_to_array,
 slope_estimation
@@ -239,4 +240,88 @@ function peak_interpolation(
     imax + 0.5*(val[1]-val[3])/(val[1]-2.*val[2]+val[3])
 end
 
+"""
+Input:
+
+    - input_filename: csv file with these columns:
+
+      * Filename: list of file names (or paths), e.g. NA-3-10.tif
+
+      * Type: factor of files, e.g. artery or vein
+
+      * Series: another factor, e.g. artery3, etc.
+
+      * Direction: d (for down = top-left to bottom-right) or u (bottom-left -> top-right)
+
+      * LenPix: length of pixel in appropriate units
+
+      * TimePerRow: time needed for scanning a row of pixels of the complete image (not only ROI)
+
+   - clip: vector of four integers determining how many pixels to be clipped from top, right, bottom, left, e.g. the default is [10,10,10,10]
+
+   - dxmin: minimum delta_x for the column correlation, default: 0
+
+   - dxmax: maximum delta_x for the column correlation, default: 18
+
+   - dymin: minimum delta_y for the column correlation, default: 0
+
+   - dymax: maximum delta_y for the column correlation, default: 10
+
+   - Plot: should violin plot be provided? default: true
+
+Output:
+
+  - data frame containing:
+
+       * input data
+
+       * estimated slope beta0_d for direction top-left to bottom-right
+
+       * estimated slope beta0_u for direction bottom-left to top-right
+
+       * standard error of beta0_d
+
+       * standard error of beta0_u
+
+       * velocity
+"""
+function estimate_velocities(
+                             input_filename::String;
+                             clip::Array{Int64,1}=[0,0,0,0],
+                             dxmin::Int64=0,
+                             dxmax::Int64=18,
+                             dymin::Int64=0,
+                             dymax::Int64=10,
+                             Plot::Bool=true
+                             )
+
+    files = readtable(input_filename)
+
+    n_files = length(files[:,1])
+
+    files = 
+    hcat(files, 
+         DataFrame(
+                   beta0_d = zeros(n_files),
+                   beta0_u = zeros(n_files),
+                   beta0_d_err = zeros(n_files),
+                   beta0_u_err = zeros(n_files),
+                   Velocity = zeros(n_files)
+                   ))
+
+    for i in 1:n_files
+        A = ROI_to_array(load(files[i,:Filename]), clip)
+        files[i,:beta0_d],files[i,:beta0_u],files[i,:beta0_d_err],files[i,:beta0_u_err] = 
+        slope_estimation(A, dxmin, dxmax, dymin, dymax)
+        slope = files[i,:Direction]=="d" ? files[i,:beta0_d] : files[i,:beta0_u]
+        files[i,:Velocity] = files[i,:LenPix]/files[i,:TimePerRow]*1./slope
+    end
+
+    if Plot==true
+        p = violin(files[!isinf(files[:Velocity]),:], :Series, :Velocity, lab="")
+        files, p
+    else
+        files
+    end
+end
 end # module
