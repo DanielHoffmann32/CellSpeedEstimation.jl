@@ -4,6 +4,7 @@ module CellSpeedEstimation
 using DataFrames,
 GLM,
 Images,
+StatPlots,
 StatsBase
 
 export column_correlations,
