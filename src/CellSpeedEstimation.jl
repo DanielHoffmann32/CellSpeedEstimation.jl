@@ -25,7 +25,7 @@ end
 """
 Input:
 
-    - image
+    - grayscale image
 
     - clip array in pixels (4 pos. integers, clockwise from top), default=[0,0,0,0]
 
@@ -35,7 +35,9 @@ Output:
 
     - 2D float array corresponding to image
 """
-function ROI_to_array(im::Image, clip::Array{Int64,1}=[0, 0, 0, 0], invert::Bool=true)
+function ROI_to_array(im::Image,
+                      clip::Array{Int64,1}=[0, 0, 0, 0],
+                      invert::Bool=true)
     if invert==true
         im = invert_grayscale_image(im)
     end
@@ -243,7 +245,7 @@ end
 """
 Input:
 
-    - input_filename: csv file with these columns:
+   - input_filename: csv file with these columns:
 
       * Filename: list of file names (or paths), e.g. NA-3-10.tif
 
@@ -271,7 +273,7 @@ Input:
 
 Output:
 
-  - data frame containing:
+   - data frame containing:
 
        * input data
 
@@ -284,6 +286,9 @@ Output:
        * standard error of beta0_u
 
        * velocity
+
+  - if Plot==true: violin plot data structure with x = Series, y = Velocity
+      
 """
 function estimate_velocities(
                              input_filename::String;
