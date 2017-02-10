@@ -18,7 +18,7 @@ Input: grayscale image
 
 Output: inverted image
 """
-function invert_grayscale_image(im::Image)
+function invert_grayscale_image(im::Array{ColorTypes.Gray{FixedPointNumbers.Normed{UInt8,8}},2})
     return maximum(im)-im
 end
 
@@ -35,7 +35,7 @@ Output:
 
     - 2D float array corresponding to image
 """
-function ROI_to_array(im::Image,
+function ROI_to_array(im::Array{ColorTypes.Gray{FixedPointNumbers.Normed{UInt8,8}},2},
                       clip::Array{Int64,1}=[0, 0, 0, 0],
                       invert::Bool=true)
     if invert==true
@@ -259,6 +259,10 @@ Input:
 
       * TimePerRow: time needed for scanning a row of pixels of the complete image (not only ROI)
 
+      * DarkTrace (true or false): true if the trace is dark on a lighter background, false if the trace is light on a darker background
+
+      * Color (true or false): is this a color image (=> true), or a grayscale image (=> false)? All images will be transformed into grayscale images
+
    - clip: vector of four integers determining how many pixels to be clipped from top, right, bottom, left, e.g. the default is [10,10,10,10]
 
    - dxmin: minimum delta_x for the column correlation, default: 0
@@ -315,7 +319,12 @@ function estimate_velocities(
                    ))
 
     for i in 1:n_files
-        A = ROI_to_array(load(files[i,:Filename]), clip)
+        if files[i,:Color] == true
+            im = Gray.(load(files[i,:Filename]))
+        else
+            im = load(files[i,:Filename])
+        end
+        A = ROI_to_array(im, clip, files[i,:DarkTrace])
         files[i,:beta0_d],files[i,:beta0_u],files[i,:beta0_d_err],files[i,:beta0_u_err] = 
         slope_estimation(A, dxmin, dxmax, dymin, dymax)
         slope = files[i,:Direction]=="d" ? files[i,:beta0_d] : files[i,:beta0_u]
